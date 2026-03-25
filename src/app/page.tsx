@@ -1,8 +1,8 @@
-import { getAllCards } from "@/data";
+import { getAllCards } from "@/db/queries";
 import { CardGrid } from "@/components/CardGrid";
 
-export default function Home() {
-  const cards = getAllCards();
+export default async function Home() {
+  const cards = await getAllCards();
 
   return (
     <div className="py-6">

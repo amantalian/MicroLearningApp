@@ -1,8 +1,8 @@
-import { getAllCollections } from "@/data";
+import { getAllCollections } from "@/db/queries";
 import Link from "next/link";
 
-export default function CollectionsPage() {
-  const collections = getAllCollections();
+export default async function CollectionsPage() {
+  const collections = await getAllCollections();
 
   return (
     <div className="py-6">

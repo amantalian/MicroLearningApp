@@ -1,10 +1,10 @@
-import { getCollectionById } from "@/data";
+import { getCollectionById } from "@/db/queries";
 import { CardGrid } from "@/components/CardGrid";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default function CollectionPage({ params }: { params: { id: string } }) {
-  const collection = getCollectionById(params.id);
+export default async function CollectionPage({ params }: { params: { id: string } }) {
+  const collection = await getCollectionById(params.id);
   if (!collection) notFound();
 
   return (

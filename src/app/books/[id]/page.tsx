@@ -1,10 +1,10 @@
-import { getBookById } from "@/data";
+import { getBookById } from "@/db/queries";
 import { CardGrid } from "@/components/CardGrid";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default function BookPage({ params }: { params: { id: string } }) {
-  const book = getBookById(params.id);
+export default async function BookPage({ params }: { params: { id: string } }) {
+  const book = await getBookById(params.id);
   if (!book) notFound();
 
   const cardsWithBook = book.cards.map((c) => ({ ...c, book }));

@@ -1,8 +1,8 @@
-import { getAllBooks } from "@/data";
+import { getAllBooks } from "@/db/queries";
 import Link from "next/link";
 
-export default function BooksPage() {
-  const books = getAllBooks();
+export default async function BooksPage() {
+  const books = await getAllBooks();
 
   return (
     <div className="py-6">

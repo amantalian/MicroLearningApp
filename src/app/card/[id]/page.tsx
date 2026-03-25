@@ -1,9 +1,9 @@
-import { getCardById } from "@/data";
+import { getCardById } from "@/db/queries";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default function CardPage({ params }: { params: { id: string } }) {
-  const card = getCardById(params.id);
+export default async function CardPage({ params }: { params: { id: string } }) {
+  const card = await getCardById(params.id);
   if (!card) notFound();
 
   return (
