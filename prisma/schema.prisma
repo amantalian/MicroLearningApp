@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id       String @id @default(cuid())
+  title    String
+  author   String
+  coverUrl String @default("")
+  category String @default("")
+  cards    Card[]
+}
+
+model Card {
+  id      String           @id @default(cuid())
+  bookId  String
+  book    Book             @relation(fields: [bookId], references: [id])
+  emoji   String
+  title   String
+  content String
+  order   Int              @default(0)
+  gradient String          @default("")
+  collections CardCollection[]
+}
+
+model Collection {
+  id          String           @id @default(cuid())
+  name        String
+  description String           @default("")
+  emoji       String           @default("📚")
+  cards       CardCollection[]
+}
+
+model CardCollection {
+  cardId       String
+  collectionId String
+  card         Card       @relation(fields: [cardId], references: [id])
+  collection   Collection @relation(fields: [collectionId], references: [id])
+
+  @@id([cardId, collectionId])
+}
