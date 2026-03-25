@@ -1,11 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { getAllCards } from "@/data";
 import { CardGrid } from "@/components/CardGrid";
 
-export default async function Home() {
-  const cards = await prisma.card.findMany({
-    include: { book: true },
-    orderBy: { order: "asc" },
-  });
+export default function Home() {
+  const cards = getAllCards();
 
   return (
     <div className="py-6">

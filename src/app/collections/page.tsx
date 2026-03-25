@@ -1,10 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { getAllCollections } from "@/data";
 import Link from "next/link";
 
-export default async function CollectionsPage() {
-  const collections = await prisma.collection.findMany({
-    include: { _count: { select: { cards: true } } },
-  });
+export default function CollectionsPage() {
+  const collections = getAllCollections();
 
   return (
     <div className="py-6">

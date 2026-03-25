@@ -1,7 +1,3 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
 const GRADIENTS = [
   "from-violet-600 to-indigo-600",
   "from-rose-500 to-pink-600",
@@ -15,11 +11,12 @@ const GRADIENTS = [
   "from-yellow-500 to-amber-600",
 ];
 
-const books = [
+type CardSeed = { emoji: string; title: string; content: string };
+type BookSeed = { title: string; author: string; category: string; cards: CardSeed[] };
+
+const booksRaw: BookSeed[] = [
   {
-    title: "Atomic Habits",
-    author: "James Clear",
-    category: "Self-Improvement",
+    title: "Atomic Habits", author: "James Clear", category: "Self-Improvement",
     cards: [
       { emoji: "🔄", title: "The 1% Rule", content: "Getting 1% better every day counts for a lot in the long-run. If you get 1% better each day for one year, you'll end up 37 times better by the time you're done. Habits are the compound interest of self-improvement." },
       { emoji: "🎯", title: "Systems Over Goals", content: "You do not rise to the level of your goals. You fall to the level of your systems. Goals are about the results you want to achieve. Systems are about the processes that lead to those results." },
@@ -34,9 +31,7 @@ const books = [
     ],
   },
   {
-    title: "Deep Work",
-    author: "Cal Newport",
-    category: "Productivity",
+    title: "Deep Work", author: "Cal Newport", category: "Productivity",
     cards: [
       { emoji: "🧠", title: "Deep Work Definition", content: "Deep work is professional activities performed in a state of distraction-free concentration that push your cognitive capabilities to their limit. These efforts create new value, improve your skill, and are hard to replicate." },
       { emoji: "📱", title: "Shallow Work Trap", content: "Shallow work is non-cognitively demanding, logistical-style tasks, often performed while distracted. These efforts tend not to create much new value in the world and are easy to replicate. Most knowledge workers spend most of their time here." },
@@ -51,9 +46,7 @@ const books = [
     ],
   },
   {
-    title: "Thinking, Fast and Slow",
-    author: "Daniel Kahneman",
-    category: "Psychology",
+    title: "Thinking, Fast and Slow", author: "Daniel Kahneman", category: "Psychology",
     cards: [
       { emoji: "⚡", title: "System 1: Fast Thinking", content: "System 1 operates automatically and quickly, with little or no effort and no sense of voluntary control. It's the intuitive, emotional brain that makes snap judgments and handles routine decisions effortlessly." },
       { emoji: "🐢", title: "System 2: Slow Thinking", content: "System 2 allocates attention to the effortful mental activities that demand it, including complex computations. It's the deliberate, logical brain. The operations of System 2 are often associated with the subjective experience of agency and choice." },
@@ -68,9 +61,7 @@ const books = [
     ],
   },
   {
-    title: "The Psychology of Money",
-    author: "Morgan Housel",
-    category: "Finance",
+    title: "The Psychology of Money", author: "Morgan Housel", category: "Finance",
     cards: [
       { emoji: "🎲", title: "Luck & Risk", content: "Nothing is as good or as bad as it seems. Every outcome in life is guided by forces other than individual effort. Luck and risk are both real and hard to identify. They are so similar that you can't believe in one without equally respecting the other." },
       { emoji: "🏃", title: "Never Enough", content: "The hardest financial skill is getting the goalpost to stop moving. Modern capitalism makes us want more. There is no reason to risk what you have and need for what you don't have and don't need. Know when you have enough." },
@@ -85,9 +76,7 @@ const books = [
     ],
   },
   {
-    title: "Sapiens",
-    author: "Yuval Noah Harari",
-    category: "History",
+    title: "Sapiens", author: "Yuval Noah Harari", category: "History",
     cards: [
       { emoji: "🌍", title: "The Cognitive Revolution", content: "About 70,000 years ago, Homo sapiens developed new ways of thinking and communicating. What was so special about our language? It could transmit information about things that don't exist at all — myths, legends, gods, religions." },
       { emoji: "🤝", title: "The Power of Fiction", content: "Large numbers of strangers can cooperate successfully by believing in common myths. Any large-scale human cooperation is rooted in common myths — nations, money, human rights, laws, justice — none of these things exist outside our collective imagination." },
@@ -103,7 +92,61 @@ const books = [
   },
 ];
 
-const collections = [
+// Build typed data with IDs
+
+export type Book = {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+};
+
+export type Card = {
+  id: string;
+  bookId: string;
+  emoji: string;
+  title: string;
+  content: string;
+  order: number;
+  gradient: string;
+};
+
+export type Collection = {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+};
+
+export type CardCollection = {
+  cardId: string;
+  collectionId: string;
+};
+
+const books: Book[] = [];
+const cards: Card[] = [];
+let gradientIndex = 0;
+
+for (let bi = 0; bi < booksRaw.length; bi++) {
+  const b = booksRaw[bi];
+  const bookId = `book-${bi + 1}`;
+  books.push({ id: bookId, title: b.title, author: b.author, category: b.category });
+  for (let ci = 0; ci < b.cards.length; ci++) {
+    const c = b.cards[ci];
+    cards.push({
+      id: `card-${bookId}-${ci + 1}`,
+      bookId,
+      emoji: c.emoji,
+      title: c.title,
+      content: c.content,
+      order: ci,
+      gradient: GRADIENTS[gradientIndex % GRADIENTS.length],
+    });
+    gradientIndex++;
+  }
+}
+
+const collectionsRaw = [
   { name: "Mindset & Growth", emoji: "🌱", description: "Ideas about personal growth and mindset shifts", bookTitles: ["Atomic Habits", "Deep Work"] },
   { name: "Money & Wealth", emoji: "💰", description: "Financial wisdom and wealth-building insights", bookTitles: ["The Psychology of Money"] },
   { name: "Human Nature", emoji: "🧠", description: "Understanding how humans think and behave", bookTitles: ["Thinking, Fast and Slow", "Sapiens"] },
@@ -111,58 +154,64 @@ const collections = [
   { name: "Big History", emoji: "🌍", description: "The grand narrative of human civilization", bookTitles: ["Sapiens"] },
 ];
 
-async function main() {
-  await prisma.cardCollection.deleteMany();
-  await prisma.card.deleteMany();
-  await prisma.collection.deleteMany();
-  await prisma.book.deleteMany();
+const collections: Collection[] = [];
+const cardCollections: CardCollection[] = [];
 
-  const createdBooks: Record<string, string> = {};
-  const bookCards: Record<string, string[]> = {};
-
-  let gradientIndex = 0;
-  for (const book of books) {
-    const created = await prisma.book.create({
-      data: { title: book.title, author: book.author, category: book.category },
-    });
-    createdBooks[book.title] = created.id;
-    bookCards[book.title] = [];
-
-    for (let i = 0; i < book.cards.length; i++) {
-      const card = book.cards[i];
-      const c = await prisma.card.create({
-        data: {
-          bookId: created.id,
-          emoji: card.emoji,
-          title: card.title,
-          content: card.content,
-          order: i,
-          gradient: GRADIENTS[gradientIndex % GRADIENTS.length],
-        },
-      });
-      bookCards[book.title].push(c.id);
-      gradientIndex++;
+for (let i = 0; i < collectionsRaw.length; i++) {
+  const col = collectionsRaw[i];
+  const colId = `col-${i + 1}`;
+  collections.push({ id: colId, name: col.name, emoji: col.emoji, description: col.description });
+  for (const bookTitle of col.bookTitles) {
+    const book = books.find((b) => b.title === bookTitle);
+    if (!book) continue;
+    const bookCards = cards.filter((c) => c.bookId === book.id).slice(0, 3);
+    for (const card of bookCards) {
+      cardCollections.push({ cardId: card.id, collectionId: colId });
     }
   }
-
-  for (const col of collections) {
-    const created = await prisma.collection.create({
-      data: { name: col.name, emoji: col.emoji, description: col.description },
-    });
-    for (const bookTitle of col.bookTitles) {
-      const cardIds = bookCards[bookTitle] || [];
-      // Add first 3 cards from each book to the collection
-      for (const cardId of cardIds.slice(0, 3)) {
-        await prisma.cardCollection.create({
-          data: { cardId, collectionId: created.id },
-        });
-      }
-    }
-  }
-
-  console.log("Seeded successfully!");
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+// Query helpers
+
+export function getAllCards() {
+  return cards.map((c) => ({ ...c, book: books.find((b) => b.id === c.bookId)! }));
+}
+
+export function getAllBooks() {
+  return books.map((b) => ({
+    ...b,
+    _count: { cards: cards.filter((c) => c.bookId === b.id).length },
+  }));
+}
+
+export function getBookById(id: string) {
+  const book = books.find((b) => b.id === id);
+  if (!book) return null;
+  const bookCards = cards.filter((c) => c.bookId === id).sort((a, b) => a.order - b.order);
+  return { ...book, cards: bookCards };
+}
+
+export function getCardById(id: string) {
+  const card = cards.find((c) => c.id === id);
+  if (!card) return null;
+  return { ...card, book: books.find((b) => b.id === card.bookId)! };
+}
+
+export function getAllCollections() {
+  return collections.map((col) => ({
+    ...col,
+    _count: { cards: cardCollections.filter((cc) => cc.collectionId === col.id).length },
+  }));
+}
+
+export function getCollectionById(id: string) {
+  const col = collections.find((c) => c.id === id);
+  if (!col) return null;
+  const colCards = cardCollections
+    .filter((cc) => cc.collectionId === id)
+    .map((cc) => {
+      const card = cards.find((c) => c.id === cc.cardId)!;
+      return { ...card, book: books.find((b) => b.id === card.bookId)! };
+    });
+  return { ...col, cards: colCards };
+}

@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCollectionById } from "@/data";
 import { CardGrid } from "@/components/CardGrid";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function CollectionPage({ params }: { params: { id: string } }) {
-  const collection = await prisma.collection.findUnique({
-    where: { id: params.id },
-    include: {
-      cards: {
-        include: { card: { include: { book: true } } },
-      },
-    },
-  });
-
+export default function CollectionPage({ params }: { params: { id: string } }) {
+  const collection = getCollectionById(params.id);
   if (!collection) notFound();
-
-  const cards = collection.cards.map((cc) => cc.card);
 
   return (
     <div className="py-6">
@@ -27,7 +17,7 @@ export default async function CollectionPage({ params }: { params: { id: string 
         <h1 className="text-3xl font-bold mt-2 mb-1">{collection.name}</h1>
         <p className="text-slate-400">{collection.description}</p>
       </div>
-      <CardGrid cards={cards} />
+      <CardGrid cards={collection.cards} />
     </div>
   );
 }

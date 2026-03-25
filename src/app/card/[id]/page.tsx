@@ -1,13 +1,9 @@
-import { prisma } from "@/lib/prisma";
+import { getCardById } from "@/data";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function CardPage({ params }: { params: { id: string } }) {
-  const card = await prisma.card.findUnique({
-    where: { id: params.id },
-    include: { book: true },
-  });
-
+export default function CardPage({ params }: { params: { id: string } }) {
+  const card = getCardById(params.id);
   if (!card) notFound();
 
   return (

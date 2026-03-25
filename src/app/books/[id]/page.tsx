@@ -1,14 +1,10 @@
-import { prisma } from "@/lib/prisma";
+import { getBookById } from "@/data";
 import { CardGrid } from "@/components/CardGrid";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function BookPage({ params }: { params: { id: string } }) {
-  const book = await prisma.book.findUnique({
-    where: { id: params.id },
-    include: { cards: { orderBy: { order: "asc" } } },
-  });
-
+export default function BookPage({ params }: { params: { id: string } }) {
+  const book = getBookById(params.id);
   if (!book) notFound();
 
   const cardsWithBook = book.cards.map((c) => ({ ...c, book }));
