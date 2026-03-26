@@ -15,6 +15,11 @@ export const cards = sqliteTable("cards", {
   content: text("content").notNull(),
   order: integer("order").notNull(),
   gradient: text("gradient").notNull(),
+  story: text("story").notNull().default(""),
+  keyIdea: text("key_idea").notNull().default(""),
+  quizQuestion: text("quiz_question").notNull().default(""),
+  quizOptions: text("quiz_options").notNull().default("[]"),
+  quizAnswer: integer("quiz_answer").notNull().default(0),
 });
 
 export const collections = sqliteTable("collections", {

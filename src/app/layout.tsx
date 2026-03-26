@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-slate-950 text-white min-h-screen pb-20`}>
-        <main className="max-w-2xl mx-auto px-4">{children}</main>
+      <body className={`${inter.className} bg-slate-950 text-white min-h-screen`}>
+        <main className="max-w-2xl mx-auto px-4 pb-20">{children}</main>
         <BottomNav />
       </body>
     </html>
