@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
     bookId: string;
     currentIndex: number;
     totalCards: number;
+    prevCardId: string | null;
     nextCardId: string | null;
   };
 };
@@ -27,8 +28,12 @@ export function ReadingExperience({ card }: Props) {
   const [keyIdeaRevealed, setKeyIdeaRevealed] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swiping, setSwiping] = useState(false);
   const keyIdeaRef = useRef<HTMLDivElement>(null);
   const quizRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const swipeHandledRef = useRef(false);
 
   const storyParagraphs = card.story.split("\n\n").filter(Boolean);
 
@@ -43,6 +48,54 @@ export function ReadingExperience({ card }: Props) {
       return () => clearTimeout(timer);
     }
   }, [keyIdeaRevealed]);
+
+  const navigateTo = useCallback((cardId: string | null, fallback?: string) => {
+    if (cardId) {
+      router.push(`/read/${cardId}`);
+    } else if (fallback) {
+      router.push(fallback);
+    }
+  }, [router]);
+
+  // Swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now(),
+    };
+    swipeHandledRef.current = false;
+    setSwiping(true);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || swipeHandledRef.current) return;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+    // Only track horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(dy) > Math.abs(dx) * 1.2) return;
+    // Clamp offset and add resistance at edges
+    const hasNext = !!card.nextCardId;
+    const hasPrev = !!card.prevCardId;
+    let clamped = dx;
+    if (dx > 0 && !hasPrev) clamped = dx * 0.2;
+    if (dx < 0 && !hasNext) clamped = dx * 0.2;
+    setSwipeOffset(clamped);
+  }, [card.nextCardId, card.prevCardId]);
+
+  const handleTouchEnd = useCallback(() => {
+    setSwiping(false);
+    const threshold = 50;
+    if (swipeOffset < -threshold && card.nextCardId) {
+      swipeHandledRef.current = true;
+      navigateTo(card.nextCardId);
+    } else if (swipeOffset > threshold && card.prevCardId) {
+      swipeHandledRef.current = true;
+      navigateTo(card.prevCardId);
+    }
+    setSwipeOffset(0);
+    touchStartRef.current = null;
+  }, [swipeOffset, card.nextCardId, card.prevCardId, navigateTo]);
 
   const handleRevealKeyIdea = () => {
     setKeyIdeaRevealed(true);
@@ -65,7 +118,16 @@ export function ReadingExperience({ card }: Props) {
   };
 
   return (
-    <div className="min-h-screen">
+    <div
+      className="min-h-screen"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        transform: swiping && swipeOffset !== 0 ? `translateX(${swipeOffset * 0.3}px)` : undefined,
+        transition: swiping ? "none" : "transform 0.3s ease-out",
+      }}
+    >
       {/* Header */}
       <div className="sticky top-0 z-10 px-4 pt-4 pb-3" style={{ background: "linear-gradient(180deg, #F5E6D3 0%, #F5E6D3ee 70%, transparent 100%)" }}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -96,7 +158,7 @@ export function ReadingExperience({ card }: Props) {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-5 pb-24">
+      <div className="max-w-2xl mx-auto px-5 pb-32">
         {/* Story Section */}
         <div className="pt-6 pb-8">
           <span className="text-5xl block mb-4">{card.emoji}</span>
@@ -231,6 +293,48 @@ export function ReadingExperience({ card }: Props) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 pb-[env(safe-area-inset-bottom)]">
+        <div
+          className="flex items-center justify-between px-6 py-3 max-w-2xl mx-auto"
+          style={{
+            background: "rgba(245, 230, 211, 0.92)",
+            backdropFilter: "blur(12px)",
+            borderTop: "1px solid rgba(146,100,50,0.12)",
+          }}
+        >
+          <button
+            onClick={() => navigateTo(card.prevCardId)}
+            disabled={!card.prevCardId}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all active:scale-95 ${
+              card.prevCardId
+                ? "text-amber-900/70 hover:text-amber-900 hover:bg-amber-900/5"
+                : "text-amber-900/20 cursor-default"
+            }`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <span className="text-sm font-medium">Prev</span>
+          </button>
+
+          <span className="text-amber-900/50 text-sm font-semibold tabular-nums">
+            {card.currentIndex + 1} / {card.totalCards}
+          </span>
+
+          <button
+            onClick={() => navigateTo(card.nextCardId)}
+            disabled={!card.nextCardId}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all active:scale-95 ${
+              card.nextCardId
+                ? "text-amber-900/70 hover:text-amber-900 hover:bg-amber-900/5"
+                : "text-amber-900/20 cursor-default"
+            }`}
+          >
+            <span className="text-sm font-medium">Next</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
       </div>
 
       <style jsx>{`

@@ -23,6 +23,7 @@ export default async function ReadPage({ params }: { params: { cardId: string } 
           bookId: card.bookId,
           currentIndex: card.currentIndex,
           totalCards: card.totalCards,
+          prevCardId: card.prevCardId,
           nextCardId: card.nextCardId,
         }}
       />

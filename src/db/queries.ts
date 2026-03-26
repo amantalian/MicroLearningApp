@@ -41,8 +41,9 @@ export async function getCardWithContext(id: string) {
   const [book] = await db.select().from(books).where(eq(books.id, card.bookId));
   const bookCards = await db.select().from(cards).where(eq(cards.bookId, card.bookId)).orderBy(asc(cards.order));
   const currentIndex = bookCards.findIndex((c) => c.id === card.id);
+  const prevCard = currentIndex > 0 ? bookCards[currentIndex - 1] : null;
   const nextCard = currentIndex < bookCards.length - 1 ? bookCards[currentIndex + 1] : null;
-  return { ...card, book, totalCards: bookCards.length, currentIndex, nextCardId: nextCard?.id ?? null };
+  return { ...card, book, totalCards: bookCards.length, currentIndex, prevCardId: prevCard?.id ?? null, nextCardId: nextCard?.id ?? null };
 }
 
 export async function getAllCollections() {
